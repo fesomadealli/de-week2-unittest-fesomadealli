@@ -17,6 +17,33 @@ This project represents a step toward easing that burden through smart algorithm
 - **Apply algorithmic reasoning** to maintain values within safe boundaries
 - **Write comprehensive unit tests** using pytest to ensure model stability
 
+## How to Run
+
+### Running the Application
+To start the **glucoseDoc** artificial pancreas system from the root directory (**pancreas-app**):
+
+```
+poetry run python main/artificial_pancreas.py
+```
+
+This will launch the interactive application where you can:
+- Enter carbs consumed (grams)
+- Enter exercise duration (minutes) 
+- See the system's recommended treatment action
+- Monitor glucose level changes
+
+### Running Tests
+To execute the test suite from the root directory (**pancreas-app**):
+
+```
+poetry run pytest
+```
+
+### Prerequisites
+- Python 3.7+
+- Poetry package manager
+- Dependencies installed via `poetry install`
+
 ## 🏗️ System Architecture
 
 ### Core Class: `ArtificialPancreasSystem`
@@ -50,24 +77,69 @@ A simplified model for data-driven glucose regulation that simulates basic gluco
 
 ## 🧪 Testing Strategy
 
-### Core Test Coverage
-
-```python
-# Essential test cases
-def test_glucose_increases_after_meal(system)
-def test_glucose_decreases_after_exercise(system) 
-def test_correct_action_returned(system)
-def test_glucose_never_below_min(system)
-def test_total_insulin_tracking(system)
-def test_multiple_sequential_events(system)
-def test_invalid_input_handling(system)
-```
-
 ### Key Testing Principles
 - **Boundary Testing**: Verify glucose never falls below safe minimum
 - **State Consistency**: Ensure sequential operations maintain correct state
 - **Edge Cases**: Test with extreme values and invalid inputs
 - **Behavior Validation**: Confirm correct actions for different glucose levels
+---
+
+### Test Summary for `test_artificial_pancreas.py`
+
+### **1️⃣ TestGlucoseRegulation**
+
+**Total:** 3 tests
+**Tests:**
+
+1. `test_glucose_increases_after_meal`
+2. `test_glucose_decreases_after_exercise`
+3. `test_glucose_never_below_min`
+
+---
+
+### **2️⃣ TestPredictiveActions**
+
+**Total:** 3 tests
+**Tests:**
+
+1. `test_insulin_delivery_action`
+2. `test_warn_low_glucose_action`
+3. `test_maintain_action`
+
+---
+
+### **3️⃣ TestErrorHandling**
+
+**Total:** 7 tests
+**Tests:**
+
+1. `test_negative_carbs_input`
+2. `test_negative_exercise_input`
+3. `test_negative_glucose_initialization`
+4. `test_non_numerical_glucose_initialization`
+5. `test_non_numerical_meal_input`
+6. `test_non_numerical_exercise_input`
+7. `test_total_insulin_delivered_updates`
+
+---
+
+### **4️⃣ TestActionFactory**
+
+**Total:** 3 tests (one duplicate name — only the *last one* runs)
+**Tests:**
+
+1. `test_deliver_insulin`
+2. `test_warn_low_glucose_action`
+3. `test_maintain_action` *(KeyError test — last definition overwrites the earlier one)*
+
+---
+
+### ✅ **Overall Total**
+
+**16 tests executed**
+
+---
+
 
 ## 📁 Project Structure
 
@@ -167,7 +239,7 @@ system.exercise(120)  # Extreme exercise
 
 ## 🎓 Learning Outcomes
 
-After completing this project, you'll understand:
+After completing this project, I understood:
 - How to model real-world biological processes in code
 - The importance of boundary conditions in healthcare applications
 - Writing tests that validate both expected behavior and safety constraints
@@ -181,7 +253,7 @@ This is a **simplified educational model** and should not be used for actual med
 
 ## 📞 Support
 
-For questions or issues, please open an issue in the GitHub repository or contact the project maintainers.
+For questions or issues, please open an issue in the GitHub repository.
 
 ---
 
