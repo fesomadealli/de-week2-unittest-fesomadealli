@@ -18,7 +18,8 @@ class ArtificialPancreasSystem:
                       target_glucose:float=100.0,     # healthy reading for glucose_level
                       tolerance:float=10.0):          # upper and lower tolerance rnages estimator for patient's glucose level
                 
-                   
+                self.glucose_level = glucose_level or self.GLUCOSE_MIN_RESET
+                
                 if not isinstance(self.glucose_level, (int,float)):
                         raise TypeError("Please use the Numerical Keys")
                 elif self.glucose_level < 0:
@@ -26,7 +27,7 @@ class ArtificialPancreasSystem:
                 elif self.glucose_level < self.GLUCOSE_MIN_RESET:
                         self.glucose_level = self.GLUCOSE_MIN_RESET
                 else:
-                        self.glucose_level = glucose_level
+                        self.glucose_level = glucose_level or self.GLUCOSE_MIN_RESET        
                              
                 self.insulin_sensitivity = insulin_sensitivity
                 self.target_glucose = target_glucose
@@ -135,7 +136,7 @@ class ActionFactory:
             "maintain": Maintain()
         }
         if action not in actions:
-            raise KeyError(f"Action '{action}' is not recognized, try either of these: {list(action.keys())}.")
+            raise KeyError(f"Action '{action}' is not recognized, try either of these: {list(actions.keys())}.")
         return actions[action]
        
  

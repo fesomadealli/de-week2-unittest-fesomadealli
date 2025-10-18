@@ -1,106 +1,112 @@
-
 import pytest
-from main.artificial_pancreas import (
-    ArtificialPancreasSystem as ArPS,
-    ActionFactory,
-    DeliverInsulin,
-    WarnLowGlucose,
-    Maintain
-)
+from main.artificial_pancreas import ArtificialPancreasSystem as ArPS, ActionFactory, DeliverInsulin, WarnLowGlucose, Maintain
 
-
-# ---------- FIXTURE ----------
-@pytest.fixture
-def system():
-    """Returns a fresh ArtificialPancreasSystem instance for each test."""
-    return ArPS()
-
-
-# ---------- GROUP 1: GLUCOSE REGULATION ----------
 class TestGlucoseRegulation:
+    """Group of tests for core glucose regulation methods."""
 
-    def test_glucose_increases_after_meal(self, system):
-        start = system.glucose_level
-        end = system.meal(10)
+    def setup_method(self):
+        """Run before each test in this class."""
+        self.system = ArPS()
+
+    def test_glucose_increases_after_meal(self):
+        start = self.system.glucose_level
+        end = self.system.meal(40)
         assert end > start
 
-    def test_glucose_never_below_min(self, system):
-        # Test 1: Initialize with low glucose
-        low_init = ArPS(glucose_level=5.0)
-        assert low_init.glucose_level >= low_init.GLUCOSE_MIN_RESET
-
-        # Test 2: Extreme exercise should not go below minimum
-        system.glucose_level = 80.0
-        system.exercise(100000)
-        assert system.glucose_level >= system.GLUCOSE_MIN_RESET
-
-    def test_glucose_decreases_after_exercise(self, system):
-        start = system.glucose_level
-        end = system.exercise(100)
+    def test_glucose_decreases_after_exercise(self):
+        start = self.system.glucose_level
+        end = self.system.exercise(30)
         assert end < start
 
-
-# ---------- GROUP 2: PREDICTIVE ACTIONS ----------
+    def test_glucose_never_below_min(self):
+            min_value = self.system.GLUCOSE_MIN_RESET
+            by_init = ArPS(glucose_level=5.0)              
+            by_exercise = self.system.exercise(100000)          
+            assert min_value == by_exercise
+            assert min_value == by_init.glucose_level
+            
+    
 class TestPredictiveActions:
-
-    def test_insulin_delivery_action(self, system):
-        system.glucose_level = 180.0
-        action, level = system.predict_action()
+    """Group of tests for predictive action methods."""
+    
+    def setup_method(self):
+        """Run before each test in this class."""
+        self.system = ArPS()
+        
+    def test_insulin_delivery_action(self):
+        self.system.glucose_level = 180.0                # Set high glucose level to trigger insulin delivery
+        action, level = self.system.predict_action()
         assert action == "deliver_insulin"
-        assert 100 <= level < 180.0
-
-    def test_warn_low_glucose_action(self, system):
-        system.glucose_level = 65.0
-        action, level = system.predict_action()
+        assert self.system.healthy_lower_bound < level < self.system.healthy_upper_bound                             # Glucose level should decrease after insulin delivery
+        
+    def test_warn_low_glucose_action(self):
+        self.system.glucose_level = 65.0                 # Set low glucose level to trigger warning
+        action, level = self.system.predict_action()
         assert action == "warn_low_glucose"
-        assert level == 65.0
-
-    def test_maintain_action(self, system):
-        system.glucose_level = 100.0
-        action, level = system.predict_action()
+        assert level == 65.0                             # Glucose level should remain the same
+        
+    def test_maintain_action(self):
+        self.system.glucose_level = 100.0              # Set normal glucose level to trigger maintain action
+        action, level = self.system.predict_action()
         assert action == "maintain"
-        assert level == 100.0
+        assert level == 100.0                          # Glucose level should remain the same
 
 
-# ---------- GROUP 3: ERROR HANDLING ----------
-class TestErrorHandling:
-
-    def test_negative_carbs_input(self, system):
+class TestErrorHandling:    
+    
+    def setup_method(self):
+        """Run before each test in this class."""
+        self.system = ArPS()
+        
+    def test_negative_carbs_input(self):
         with pytest.raises(ValueError):
-            system.meal(-10)
+            self.system.meal(-10)
 
-    def test_negative_exercise_input(self, system):
+    def test_negative_exercise_input(self):
         with pytest.raises(ValueError):
-            system.exercise(-15)
+            self.system.exercise(-15)    
 
     def test_negative_glucose_initialization(self):
         with pytest.raises(ValueError):
-            ArPS(glucose_level=-50.0)
-
+            self.system = ArPS(glucose_level=-50.0)
+            
     def test_non_numerical_glucose_initialization(self):
         with pytest.raises(TypeError):
-            ArPS(glucose_level="high")
-
-    def test_non_numerical_meal_input(self, system):
+            self.system(glucose_level="high")
+            
+    def test_non_numerical_meal_input(self):
         with pytest.raises(TypeError):
-            system.meal("twenty")
-
-    def test_non_numerical_exercise_input(self, system):
+            self.system.meal("twenty")
+            
+    def test_non_numerical_exercise_input(self):
         with pytest.raises(TypeError):
-            system.exercise("thirty")
+            self.system.exercise("thirty")
 
-    def test_total_insulin_delivered(self, system):
-        system.glucose_level = 200.0
-        initial_insulin = system.total_insulin_delivered
-        system.predict_action()
-        assert system.total_insulin_delivered > initial_insulin
+    def test_total_insulin_delivered_updates(self):
+        self.system.glucose_level = 200.0                    # High glucose level to trigger insulin delivery
+        initial_insulin_delivered = self.system.total_insulin_delivered
+        self.system.predict_action()
+        assert self.system.total_insulin_delivered > initial_insulin_delivered
+            
 
-    def test_action_factory(self):
+class TestActionFactory:
+    """Group of tests for ActionFactory to see that the factory calls the right test."""
+     
+    def test_deliver_insulin(self):
         deliver_insulin_action = ActionFactory.create("deliver_insulin")
         assert isinstance(deliver_insulin_action, DeliverInsulin)
-
+    
+    def test_warn_low_glucose_action(self):
         warn_low_glucose_action = ActionFactory.create("warn_low_glucose")
         assert isinstance(warn_low_glucose_action, WarnLowGlucose)
-
+    
+    def test_maintain_action(self):
         maintain_action = ActionFactory.create("maintain")
         assert isinstance(maintain_action, Maintain)
+
+    def test_maintain_action(self):
+        with pytest.raises(KeyError):
+            ActionFactory.create("call_the_doctor")
+        
+
+   
