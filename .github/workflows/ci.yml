@@ -1,0 +1,68 @@
+name: CI - Artificial Pancreas System
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: 📦 Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    
+    - name: 🔧 Install dependencies
+      run: |
+        poetry install --no-interaction
+    
+    - name: 🧪 Run pytest with coverage
+      run: |
+        poetry run pytest tests/ -v --cov=main --cov-report=xml --cov-report=term
+    
+    - name: 📊 Upload coverage report
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+    
+    - name: ✅ Run type checking (optional)
+      run: |
+        poetry run mypy main/ --ignore-missing-imports || true
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    
+    - name: Install linting tools
+      run: |
+        pip install flake8 black
+    
+    - name: Run flake8 (style check)
+      run: |
+        flake8 main/ tests/ --max-line-length=100 --ignore=E203,W503
+    
+    - name: Run black (format check)
+      run: |
+        black --check main/ tests/
